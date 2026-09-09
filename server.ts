@@ -258,11 +258,6 @@ function startGameDistribution(room: RoomState): RoomState {
   updated.phase = 'NOITE';
   return updated;
 }
-  });
-  updated.secretSolution = { killerPlayerId: updated.players[indices[1]].id, methodId: '', objectId: '' };
-  updated.phase = 'NOITE';
-  return updated;
-}
 
 function handleNightChoice(room: RoomState, killerId: string, mid: string, oid: string): RoomState {
   const updated = { ...room };
