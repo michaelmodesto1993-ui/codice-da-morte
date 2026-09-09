@@ -173,7 +173,7 @@ export function populateLobbyInvestigators(room: RoomState, targetCount: number 
 export function fillWithAIBots(room: RoomState, targetPlayerCount: number): RoomState {
   const updated = { ...room, players: [...room.players] };
   const usedCharIds = new Set(updated.players.map((p) => p.characterId));
-  const availableChars = CHARACTERS.filter((c) => !usedCharIds.has(c.id));
+  const availableChars = secureShuffle(CHARACTERS.filter((c) => !usedCharIds.has(c.id)));
 
   while (updated.players.length < targetPlayerCount && availableChars.length > 0) {
     const nextChar = availableChars.shift()!;

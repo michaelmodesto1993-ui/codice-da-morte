@@ -404,70 +404,40 @@ io.on('connection', (socket) => {
   socket.on('add_bot', () => {
     const m = socketToPlayer.get(socket.id);
     const r = rooms.get(m?.roomCode || '');
-    if (r?.hostId === m?.playerId) { rooms.set(r.code, populateLobbyInvestigators(r)); broadcastRoom(r.code); }
+    // Limit de bots para não lotar a sala indesejadamente (ex: max 12 total)
+    if (r?.hostId === m?.playerId && r.players.length < (r.settings?.maxPlayers || 12)) {
+      rooms.set(r.code, populateLobbyInvestigators(r, r.players.length + 1));
+      broadcastRoom(r.code);
+    }
   });
 
-  socket.on('clear_bots', () => {
+  socket.on('remove_bot', (d) => {
     const m = socketToPlayer.get(socket.id);
     const r = rooms.get(m?.roomCode || '');
-    if (r?.hostId === m?.playerId) { r.players = r.players.filter(p => !p.isAI); broadcastRoom(r.code); }
-  });
+    if (r?.hostId === m?.playerId && r.phase === 'LOBBY') {
+      const botToRemove = d?.botId
+        ? r.players.find(p => p.id === d.botId && p.isAI)
+        : [...r.players].reverse().find(p => p.isAI);
 
-  socket.on('update_settings', (s) => {
-    const m = socketToPlayer.get(socket.id);
-    const r = rooms.get(m?.roomCode || '');
-    if (r?.hostId === m?.playerId) { r.settings = { ...r.settings, ...s }; broadcastRoom(r.code); }
-  });
-
-  socket.on('chat_reaction', (d) => {
-    const m = socketToPlayer.get(socket.id);
-    const r = rooms.get(m?.roomCode || '');
-    if (r) {
-      const msg = r.messages.find(x => x.id === d.messageId);
-      if (msg) {
-        if (!msg.reactions) msg.reactions = {};
-        if (!msg.reactions[d.emoji]) msg.reactions[d.emoji] = [];
-        const idx = msg.reactions[d.emoji].indexOf(m!.playerId);
-        if (idx === -1) msg.reactions[d.emoji].push(m!.playerId);
-        else msg.reactions[d.emoji].splice(idx, 1);
+      if (botToRemove) {
+        r.players = r.players.filter(p => p.id !== botToRemove.id);
         broadcastRoom(r.code);
       }
     }
   });
 
-  socket.on('use_ability', (d) => {
-    const m = socketToPlayer.get(socket.id);
-    const r = rooms.get(m?.roomCode || '');
-    if (r) { rooms.set(r.code, handleAbilityUse(r, m!.playerId, d.abilityId, d.extraPayload)); broadcastRoom(r.code); }
-  });
-
-  socket.on('toggle_timer', () => {
-    const m = socketToPlayer.get(socket.id);
-    const r = rooms.get(m?.roomCode || '');
-    if (r) { r.phaseTimerActive = !r.phaseTimerActive; broadcastRoom(r.code); }
-  });
-
-  socket.on('adjust_timer', (d) => {
-    const m = socketToPlayer.get(socket.id);
-    const r = rooms.get(m?.roomCode || '');
-    if (r) { r.phaseTimerRemaining = Math.max(0, r.phaseTimerRemaining + d); broadcastRoom(r.code); }
-  });
-
-  socket.on('advance_round', () => {
-    const m = socketToPlayer.get(socket.id);
-    const r = rooms.get(m?.roomCode || '');
-    if (r) { rooms.set(r.code, handleAdvanceRound(r)); broadcastRoom(r.code); }
-  });
-
-  socket.on('update_story', (d) => {
-    const m = socketToPlayer.get(socket.id);
-    const r = rooms.get(m?.roomCode || '');
-    if (r) { r.storyNarrative = d.text; broadcastRoom(r.code); }
-  });
-
   socket.on('disconnect', () => {
     const m = socketToPlayer.get(socket.id);
-    if (m) { socketToPlayer.delete(socket.id); }
+    if (m) {
+      const r = rooms.get(m.roomCode);
+      if (r && r.phase === 'LOBBY') {
+        r.players = r.players.filter(p => p.id !== m.playerId);
+        const humans = r.players.filter(p => !p.isAI);
+        if (humans.length === 0) rooms.delete(m.roomCode);
+        else broadcastRoom(m.roomCode);
+      }
+      socketToPlayer.delete(socket.id);
+    }
   });
 });
 

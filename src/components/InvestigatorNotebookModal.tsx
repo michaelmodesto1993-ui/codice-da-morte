@@ -214,55 +214,57 @@ export const InvestigatorNotebookModal: React.FC<InvestigatorNotebookModalProps>
           </div>
         )}
 
-        {/* Navigation Tabs */}
-        <div className="px-3 sm:px-6 pt-2 pb-1 border-b border-amber-950/60 bg-black/40 flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar shrink-0">
-          <button
-            type="button"
-            onClick={() => {
-              soundEngine.playClick();
-              setActiveTab('ANOTACOES');
-            }}
-            className={`px-3 py-1.5 rounded-xl font-serif text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shrink-0 ${
-              activeTab === 'ANOTACOES'
-                ? 'bg-amber-900/90 text-amber-100 border border-amber-400 shadow-md'
-                : 'text-zinc-400 hover:text-amber-200 bg-black/40 border border-white/5'
-            }`}
-          >
-            <FileText className="w-3.5 h-3.5 text-amber-400" />
-            <span>Minhas Anotações</span>
-          </button>
+        {/* Navigation Tabs - Mobile Scrollable */}
+        <div className="px-3 sm:px-6 pt-2 pb-1 border-b border-amber-950/60 bg-black/40 flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar shrink-0 scroll-smooth">
+          <div className="flex items-center gap-1 sm:gap-2 pb-1">
+            <button
+              type="button"
+              onClick={() => {
+                soundEngine.playClick();
+                setActiveTab('ANOTACOES');
+              }}
+              className={`px-3 py-1.5 rounded-xl font-serif text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+                activeTab === 'ANOTACOES'
+                  ? 'bg-amber-900/90 text-amber-100 border border-amber-400 shadow-md'
+                  : 'text-zinc-400 hover:text-amber-200 bg-black/40 border border-white/5'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5 text-amber-400" />
+              <span>Minhas Anotações</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              soundEngine.playClick();
-              setActiveTab('SUSPEITOS');
-            }}
-            className={`px-3 py-1.5 rounded-xl font-serif text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shrink-0 ${
-              activeTab === 'SUSPEITOS'
-                ? 'bg-amber-900/90 text-amber-100 border border-amber-400 shadow-md'
-                : 'text-zinc-400 hover:text-amber-200 bg-black/40 border border-white/5'
-            }`}
-          >
-            <User className="w-3.5 h-3.5 text-amber-400" />
-            <span>Painel de Suspeitos ({room.players.filter((p) => p.role !== 'oraculo').length})</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => {
+                soundEngine.playClick();
+                setActiveTab('SUSPEITOS');
+              }}
+              className={`px-3 py-1.5 rounded-xl font-serif text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+                activeTab === 'SUSPEITOS'
+                  ? 'bg-amber-900/90 text-amber-100 border border-amber-400 shadow-md'
+                  : 'text-zinc-400 hover:text-amber-200 bg-black/40 border border-white/5'
+              }`}
+            >
+              <User className="w-3.5 h-3.5 text-amber-400" />
+              <span>Painel de Suspeitos ({room.players.filter((p) => p.role !== 'oraculo').length})</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              soundEngine.playClick();
-              setActiveTab('ELIMINACOES');
-            }}
-            className={`px-3 py-1.5 rounded-xl font-serif text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shrink-0 ${
-              activeTab === 'ELIMINACOES'
-                ? 'bg-amber-900/90 text-amber-100 border border-amber-400 shadow-md'
-                : 'text-zinc-400 hover:text-amber-200 bg-black/40 border border-white/5'
-            }`}
-          >
-            <Search className="w-3.5 h-3.5 text-amber-400" />
-            <span>Pistas Eliminadas</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => {
+                soundEngine.playClick();
+                setActiveTab('ELIMINACOES');
+              }}
+              className={`px-3 py-1.5 rounded-xl font-serif text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+                activeTab === 'ELIMINACOES'
+                  ? 'bg-amber-900/90 text-amber-100 border border-amber-400 shadow-md'
+                  : 'text-zinc-400 hover:text-amber-200 bg-black/40 border border-white/5'
+              }`}
+            >
+              <Search className="w-3.5 h-3.5 text-amber-400" />
+              <span>Pistas Eliminadas</span>
+            </button>
+          </div>
         </div>
 
         {/* Content Area */}
