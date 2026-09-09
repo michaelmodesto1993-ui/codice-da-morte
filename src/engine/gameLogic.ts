@@ -1180,10 +1180,10 @@ export function sanitizeRoomForPlayer(room: RoomState, playerId: string): RoomSt
       // Hide roles of other players unless game is over, or killer sees accomplice / accomplice sees killer
       let visibleRole: RoleType | undefined = p.role;
       if (!isGameOver && p.id !== playerId) {
-        if (isKiller && p.role === 'cumplice') {
-          visibleRole = 'cumplice';
-        } else if (isAccomplice && p.role === 'assassino') {
-          visibleRole = 'assassino';
+        if (isKiller && (p.role === 'cumplice' || p.role === 'oraculo')) {
+          visibleRole = p.role;
+        } else if (isAccomplice && (p.role === 'assassino' || p.role === 'oraculo')) {
+          visibleRole = p.role;
         } else if (isOracle && (p.role === 'assassino' || p.role === 'cumplice' || p.role === 'sabotador')) {
           visibleRole = p.role;
         } else {

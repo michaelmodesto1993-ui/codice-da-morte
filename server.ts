@@ -33,6 +33,11 @@ import {
   handleAccusation,
   handleAbilityUse,
   handleAdvanceRound,
+  handleDrawRandomEvent,
+  handleUpdateStoryNarrative,
+  handleDrawNewEvidence,
+  handleAddSpecificEvidence,
+  handleDiscardEvidence,
   autoProcessBotOracleNextRound,
   autoMarkOracleAI,
   handleAnswerAnalystInquiry,
@@ -445,6 +450,18 @@ io.on('connection', (socket) => {
     broadcastRoom(code);
   });
 
+  socket.on('toggle_ready', () => {
+    const m = socketToPlayer.get(socket.id);
+    const r = rooms.get(m?.roomCode || '');
+    if (r) {
+      const p = r.players.find(x => x.id === m?.playerId);
+      if (p) {
+        p.isReady = !p.isReady;
+        broadcastRoom(r.code);
+      }
+    }
+  });
+
   socket.on('update_character', (d) => {
     const m = socketToPlayer.get(socket.id);
     const r = rooms.get(m?.roomCode || '');
@@ -461,7 +478,46 @@ io.on('connection', (socket) => {
   socket.on('night_choice', (d) => {
     const m = socketToPlayer.get(socket.id);
     const r = rooms.get(m?.roomCode || '');
-    if (r) { rooms.set(r.code, handleNightChoice(r, m!.playerId, d.methodId, d.objectId)); broadcastRoom(r.code); }
+    if (r) {
+      try {
+        const updated = handleNightChoice(r, m!.playerId, d.methodId, d.objectId);
+        rooms.set(r.code, updated);
+        broadcastRoom(r.code);
+      } catch (err: any) {
+        socket.emit('error_message', err.message);
+      }
+    }
+  });
+
+  socket.on('suggest_night_choice', (d) => {
+    const m = socketToPlayer.get(socket.id);
+    const r = rooms.get(m?.roomCode || '');
+    if (r) {
+      const sender = r.players.find(p => p.id === m!.playerId);
+      if (sender?.role === 'cumplice') {
+        r.nightSuggestion = {
+          methodId: d.methodId,
+          objectId: d.objectId,
+          suggestedByPlayerId: m!.playerId,
+          suggestedByPlayerName: sender.name
+        };
+        broadcastRoom(r.code);
+      }
+    }
+  });
+
+  socket.on('answer_analyst_inquiry', (d) => {
+    const m = socketToPlayer.get(socket.id);
+    const r = rooms.get(m?.roomCode || '');
+    if (r) {
+      try {
+        const updated = handleAnswerAnalystInquiry(r, d.selectedItem, m!.playerId);
+        rooms.set(r.code, updated);
+        broadcastRoom(r.code);
+      } catch (err: any) {
+        socket.emit('error_message', err.message);
+      }
+    }
   });
 
   socket.on('oracle_mark', (d) => {
@@ -563,6 +619,124 @@ io.on('connection', (socket) => {
       r.designatedOraclePlayerId = d.playerId || undefined;
       r.settings.oracleSelectionMode = d.playerId ? 'custom' : 'random';
       broadcastRoom(r.code);
+    }
+  });
+
+  socket.on('use_ability', (d) => {
+    const m = socketToPlayer.get(socket.id);
+    const r = rooms.get(m?.roomCode || '');
+    if (r) {
+      try {
+        const updated = handleAbilityUse(r, m!.playerId, d.abilityId, d.extraPayload);
+        rooms.set(r.code, updated);
+        broadcastRoom(r.code);
+      } catch (err: any) {
+        socket.emit('error_message', err.message);
+      }
+    }
+  });
+
+  socket.on('draw_event', () => {
+    const m = socketToPlayer.get(socket.id);
+    const r = rooms.get(m?.roomCode || '');
+    if (r) {
+      try {
+        const updated = handleDrawRandomEvent(r);
+        rooms.set(r.code, updated);
+        broadcastRoom(r.code);
+      } catch (err: any) {
+        socket.emit('error_message', err.message);
+      }
+    }
+  });
+
+  socket.on('toggle_timer', () => {
+    const m = socketToPlayer.get(socket.id);
+    const r = rooms.get(m?.roomCode || '');
+    if (r) {
+      r.phaseTimerActive = !r.phaseTimerActive;
+      broadcastRoom(r.code);
+    }
+  });
+
+  socket.on('adjust_timer', (d) => {
+    const m = socketToPlayer.get(socket.id);
+    const r = rooms.get(m?.roomCode || '');
+    if (r) {
+      const delta = typeof d === 'number' ? d : d.deltaSeconds || 0;
+      r.phaseTimerRemaining = Math.max(0, r.phaseTimerRemaining + delta);
+      broadcastRoom(r.code);
+    }
+  });
+
+  socket.on('draw_evidence', () => {
+    const m = socketToPlayer.get(socket.id);
+    const r = rooms.get(m?.roomCode || '');
+    if (r) {
+      try {
+        const updated = handleDrawNewEvidence(r);
+        rooms.set(r.code, updated);
+        broadcastRoom(r.code);
+      } catch (err: any) {
+        socket.emit('error_message', err.message);
+      }
+    }
+  });
+
+  socket.on('add_evidence', (d) => {
+    const m = socketToPlayer.get(socket.id);
+    const r = rooms.get(m?.roomCode || '');
+    if (r) {
+      try {
+        const updated = handleAddSpecificEvidence(r, d.evidenceId);
+        rooms.set(r.code, updated);
+        broadcastRoom(r.code);
+      } catch (err: any) {
+        socket.emit('error_message', err.message);
+      }
+    }
+  });
+
+  socket.on('discard_evidence', (d) => {
+    const m = socketToPlayer.get(socket.id);
+    const r = rooms.get(m?.roomCode || '');
+    if (r) {
+      try {
+        const updated = handleDiscardEvidence(r, d.evidenceId);
+        rooms.set(r.code, updated);
+        broadcastRoom(r.code);
+      } catch (err: any) {
+        socket.emit('error_message', err.message);
+      }
+    }
+  });
+
+  socket.on('advance_round', () => {
+    const m = socketToPlayer.get(socket.id);
+    const r = rooms.get(m?.roomCode || '');
+    if (r) {
+      try {
+        const updated = handleAdvanceRound(r);
+        rooms.set(r.code, updated);
+        broadcastRoom(r.code);
+      } catch (err: any) {
+        socket.emit('error_message', err.message);
+      }
+    }
+  });
+
+  socket.on('update_story', (d) => {
+    const m = socketToPlayer.get(socket.id);
+    const r = rooms.get(m?.roomCode || '');
+    if (r) {
+      try {
+        const text = d.text || d.narrative || '';
+        const updated = handleUpdateStoryNarrative(r, m!.playerId, text);
+        rooms.set(r.code, updated);
+        broadcastRoom(r.code);
+      } catch (err: any) {
+        socket.emit('error_message', err.message);
+      }
     }
   });
 
