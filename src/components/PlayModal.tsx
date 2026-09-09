@@ -14,6 +14,7 @@ import {
   Lock,
   PlusCircle,
   Search,
+  Trash2,
 } from 'lucide-react';
 import { soundEngine } from '../utils/soundEngine';
 

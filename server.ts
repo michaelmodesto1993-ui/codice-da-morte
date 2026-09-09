@@ -22,6 +22,23 @@ import {
   getRandomAtmosphericNarrative
 } from './src/data/gameData';
 
+import {
+  createNewRoom,
+  fillWithAIBots,
+  populateLobbyInvestigators,
+  startGameDistribution,
+  handleNightChoice,
+  handleOracleMark,
+  finishOraclePhase,
+  handleAccusation,
+  handleAbilityUse,
+  handleAdvanceRound,
+  autoProcessBotOracleNextRound,
+  autoMarkOracleAI,
+  handleAnswerAnalystInquiry,
+  sanitizeRoomForPlayer
+} from './src/engine/gameLogic';
+
 // Engine
 import { generateDynamicCrimeNarrative } from './src/engine/crimeNarrativeEngine';
 
@@ -206,16 +223,41 @@ function populateLobbyInvestigators(room: RoomState, targetCount: number = 10): 
 
 function startGameDistribution(room: RoomState): RoomState {
   const updated = { ...room, players: [...room.players] };
-  const indices = secureShuffle(updated.players.map((_, i) => i));
+  const allIndices = updated.players.map((_, i) => i);
+  let oracleIdx = -1;
+
+  // 1. Determine Oracle
+  if (updated.designatedOraclePlayerId) {
+    oracleIdx = updated.players.findIndex(p => p.id === updated.designatedOraclePlayerId);
+  } else if (updated.settings.oracleSelectionMode === 'host') {
+    oracleIdx = updated.players.findIndex(p => p.id === updated.hostId);
+  }
+
+  if (oracleIdx === -1) {
+    oracleIdx = Math.floor(Math.random() * updated.players.length);
+  }
+
+  // 2. Determine Killer
+  const others = allIndices.filter(i => i !== oracleIdx);
+  const killerIdx = others[Math.floor(Math.random() * others.length)];
+
+  // 3. Assign Roles
   updated.players.forEach((p, i) => {
-    if (i === indices[0]) p.role = 'oraculo';
-    else if (i === indices[1]) p.role = 'assassino';
+    if (i === oracleIdx) p.role = 'oraculo';
+    else if (i === killerIdx) p.role = 'assassino';
     else p.role = 'investigador';
+
     if (p.role !== 'oraculo') {
       p.methods = secureShuffle(METHODS).slice(0, 4);
       p.objects = secureShuffle(OBJECTS).slice(0, 4);
       p.ability = secureShuffle(ABILITIES)[0];
     }
+  });
+
+  updated.secretSolution = { killerPlayerId: updated.players[killerIdx].id, methodId: '', objectId: '' };
+  updated.phase = 'NOITE';
+  return updated;
+}
   });
   updated.secretSolution = { killerPlayerId: updated.players[indices[1]].id, methodId: '', objectId: '' };
   updated.phase = 'NOITE';
@@ -566,16 +608,62 @@ setInterval(() => {
 
 setInterval(() => {
   rooms.forEach((r, c) => {
+    // 1. Bot Oracle Auto-Marking
+    if (r.phase === 'ORACULO') {
+      const oraclePlayer = r.players.find((p) => p.role === 'oraculo');
+      if (oraclePlayer?.isAI) {
+        // Round 1 use autoMarkOracleAI, subsequent rounds use autoProcessBotOracleNextRound
+        const updated = (r.round === 1 && !r.evidencesOnTable.some(e => e.markedOptionIndex !== undefined))
+          ? autoMarkOracleAI(r)
+          : autoProcessBotOracleNextRound(r);
+
+        rooms.set(c, updated);
+        broadcastRoom(c);
+        return;
+      }
+    }
+
+    // 2. Bot Assassin Auto-Choice
+    if (r.phase === 'NOITE') {
+      const killerPlayer = r.players.find((p) => p.role === 'assassino');
+      if (killerPlayer?.isAI && killerPlayer.methods.length > 0 && killerPlayer.objects.length > 0) {
+        const randMethod = killerPlayer.methods[Math.floor(Math.random() * killerPlayer.methods.length)];
+        const randObject = killerPlayer.objects[Math.floor(Math.random() * killerPlayer.objects.length)];
+        try {
+          const updated = handleNightChoice(r, killerPlayer.id, randMethod.id, randObject.id);
+          rooms.set(c, updated);
+          broadcastRoom(c);
+          return;
+        } catch (e) {
+          console.error('[AI Bot] Error in auto-night-choice:', e);
+        }
+      }
+    }
+
+    // 3. Bot Investigation Phrases
     if (r.phase === 'INVESTIGACAO' && !r.winner && Math.random() < 0.1) {
-      // Simulation of AI bot action
-      const bot = r.players.find(p => p.isAI);
-      if (bot) {
-        r.messages.push({ id: `b_${Date.now()}`, senderId: bot.id, senderName: bot.name, text: 'Estou analisando as pistas...', timestamp: new Date().toLocaleTimeString() });
+      const bots = r.players.filter(p => p.isAI);
+      if (bots.length > 0) {
+        const bot = bots[Math.floor(Math.random() * bots.length)];
+        const phrases = [
+          'O Oráculo selou algo muito específico aqui...',
+          'Essas evidências cruzadas apontam para um suspeito.',
+          'Olhem bem as cartas na mesa, a verdade está próxima.',
+          'Alguém mentiu no depoimento inicial?',
+          'Vou examinar os arquivos ancestrais mais uma vez.'
+        ];
+        r.messages.push({
+          id: `b_${Date.now()}`,
+          senderId: bot.id,
+          senderName: bot.name,
+          text: phrases[Math.floor(Math.random() * phrases.length)],
+          timestamp: new Date().toLocaleTimeString()
+        });
         broadcastRoom(c);
       }
     }
   });
-}, 3000);
+}, 2000);
 
 async function startApp() {
   if (process.env.NODE_ENV !== 'production') {
