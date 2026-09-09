@@ -1,4 +1,5 @@
-import { RoomState, Player, ABILITIES, CHARACTERS, EVIDENCES, METHODS, OBJECTS } from '../types/game';
+import { RoomState, Player } from '../types/game';
+import { ABILITIES, CHARACTERS, EVIDENCES, METHODS, OBJECTS } from '../data/gameData';
 
 export interface TutorialStep {
   id: string;

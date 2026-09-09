@@ -203,6 +203,33 @@ export const PlayModal: React.FC<PlayModalProps> = ({
             <button
               onClick={() => {
                 soundEngine.playClick();
+                if ((window as any).startTutorial) {
+                  (window as any).startTutorial();
+                  onClose();
+                }
+              }}
+              className="w-full p-3 sm:p-3.5 rounded-2xl bg-gradient-to-r from-[#0a1b2a] via-[#050d18] to-[#02050a] hover:from-[#102a3d] border border-[#3a8ab8]/60 hover:border-[#58a6e5] transition-all flex items-center justify-between group shadow-[0_4px_15px_rgba(0,0,0,0.7)] text-left relative overflow-hidden"
+            >
+              <div className="flex items-center gap-3.5 z-10">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-b from-[#132e40] to-[#08121d] border border-[#37a6d4]/60 flex items-center justify-center text-[#7bc9f3] shadow-inner shrink-0 group-hover:scale-105 transition-transform">
+                  <Sparkles className="w-6 h-6 text-[#58a6e5]" />
+                </div>
+                <div>
+                  <span className="text-xs sm:text-sm font-serif font-bold text-[#baf1f7] group-hover:text-white tracking-wider block">
+                    APRENDER A JOGAR (TUTORIAL)
+                  </span>
+                  <span className="text-[9px] sm:text-[10px] font-serif text-[#59a0b8] tracking-wide block uppercase">
+                    GUIA COMPLETO: REGRAS, CARTAS E IA
+                  </span>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-[#387ba6] group-hover:text-[#7bc9f3] transition-transform group-hover:translate-x-1 z-10" />
+            </button>
+
+            {/* 1.5 Tutorial Jogável (Blue/Mystic) */}
+            <button
+              onClick={() => {
+                soundEngine.playClick();
                 // onClose e trigger tutorial (vamos implementar no App.tsx)
                 if ((window as any).startTutorial) {
                   (window as any).startTutorial();

@@ -2231,15 +2231,6 @@ function GameApp() {
 }
 
 export default function App() {
-  // We'll manage tutorial steps here to keep them globally accessible over the zoom provider
-  const [isTutorialActive, setIsTutorialActive] = useState<boolean>(false);
-  const [tutorialStepIndex, setTutorialStepIndex] = useState<number>(0);
-
-  // Re-declare startTutorial in the window scope if needed, or pass via context/props
-  // For now, let's keep it simple and just render the overlay in App.
-  // We need to sync this with GameApp's internal state if we want interactivity.
-
-  // Let's actually put the Overlay inside GameApp's return at the end.
   return (
     <GameZoomProvider>
       <GameApp />
