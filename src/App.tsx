@@ -114,8 +114,7 @@ import {
   Loader2,
 } from 'lucide-react';
 
-function GameApp() {
-  // Connection & Player State
+function AppContent() {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [room, setRoom] = useState<RoomState | null>(null);
   const [myPlayerId, setMyPlayerId] = useState<string>('');
@@ -1623,6 +1622,27 @@ function GameApp() {
       className="app-container min-h-screen w-full font-serif flex flex-col justify-between selection:bg-[#ff4444] selection:text-white relative overflow-x-hidden overflow-y-auto transition-colors duration-300 bg-cover bg-center"
       style={{ backgroundImage: `url(${codiceMorteLivroImg})` }}
     >
+      {/* ... rest of JSX ... */}
+    </div>
+  );
+}
+
+function AppRoot() {
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [room, setRoom] = useState<RoomState | null>(null);
+  // ... rest of state and logic ...
+
+      {/* ... (restando do JSX de GameApp) ... */}
+    </div>
+  );
+}
+
+function AppContent() {
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [room, setRoom] = useState<RoomState | null>(null);
+  const [myPlayerId, setMyPlayerId] = useState<string>('');
+  // ... mover estados e handlers aqui para AppContent ...
+
       {/* Ambient atmospheric backdrop */}
       <div className="fixed inset-0 bg-black/80 backdrop-blur-[2px] z-0 pointer-events-none" />
       <div className="fixed inset-0 bg-gradient-to-b from-black/85 via-black/60 to-[#0c0404]/90 z-0 pointer-events-none" />
@@ -2215,28 +2235,17 @@ function GameApp() {
   );
 }
 
-  const handleNextTutorialStep = () => {
-    if (tutorialStepIndex < TUTORIAL_STEPS.length - 1) {
-      setTutorialStepIndex((prev) => prev + 1);
-    } else {
-      setIsTutorialActive(false);
-      soundEngine.playGavelStrike();
-    }
-  };
+  return (
+    <div className="w-full h-full">
+      <AppRoot />
+    </div>
+  );
+}
 
+export default function App() {
   return (
     <GameZoomProvider>
-      <GameApp />
-
-      {/* Tutorial Guide Overlay */}
-      {isTutorialActive && currentTutorialStep && (
-        <TutorialOverlay
-          step={currentTutorialStep}
-          onNext={handleNextTutorialStep}
-          onClose={() => setIsTutorialActive(false)}
-          isLast={tutorialStepIndex === TUTORIAL_STEPS.length - 1}
-        />
-      )}
+      <AppContent />
     </GameZoomProvider>
   );
 }
