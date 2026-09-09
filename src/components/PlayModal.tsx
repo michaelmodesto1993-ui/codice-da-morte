@@ -201,6 +201,7 @@ export const PlayModal: React.FC<PlayModalProps> = ({
 
             {/* 1.5 Tutorial Jogável (Blue/Mystic) */}
             <button
+              id="btn-trigger-tutorial"
               onClick={() => {
                 soundEngine.playClick();
                 if ((window as any).startTutorial) {
@@ -219,7 +220,7 @@ export const PlayModal: React.FC<PlayModalProps> = ({
                     APRENDER A JOGAR (TUTORIAL)
                   </span>
                   <span className="text-[9px] sm:text-[10px] font-serif text-[#59a0b8] tracking-wide block uppercase">
-                    GUIA COMPLETO: REGRAS, CARTAS E IA
+                    GUIA PASSO A PASSO: REGRAS E INTERFACE
                   </span>
                 </div>
               </div>
