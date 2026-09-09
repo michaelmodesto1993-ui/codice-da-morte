@@ -113,6 +113,14 @@ const getCanonicalId = (fileName: string): string[] => {
     }
   }
 
+  // 9. Markers / Seals - Map common naming variations to canonical IDs
+  const markerColors = ['dourado', 'vermelho', 'azul', 'cinza', 'preto'];
+  for (const color of markerColors) {
+    if (clean.includes(color) && (clean.includes('seal') || clean.includes('marcador') || clean.includes('selo'))) {
+      ids.push(`seal_${color}`, `marcador_${color}`, `selo_${color}`, `cera_${color}`, `wax_${color}`);
+    }
+  }
+
   return Array.from(new Set(ids));
 };
 
@@ -279,7 +287,26 @@ function sanitizeRoomForPlayer(room: RoomState, pid: string): RoomState {
 // --- EXPRESS ENDPOINTS ---
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
-app.get('/api/rooms', (req, res) => res.json({ rooms: Array.from(rooms.values()).map(r => ({ code: r.code, players: r.players.length })) }));
+app.get('/api/rooms', (req, res) => res.json({ rooms: Array.from(rooms.values()).map(r => ({
+  code: r.code,
+  name: r.roomName || 'INVESTIGAÇÃO SOMBRIA',
+  hostName: r.players.find(p => p.id === r.hostId)?.name || 'Anfitrião',
+  playerCount: r.players.length,
+  maxPlayers: r.settings?.maxPlayers || 10,
+  isPrivate: !!r.isPrivate,
+  gameMode: r.gameMode || 'CASUAL'
+})) }));
+
+// REST API to delete a room (admin or host request)
+app.delete('/api/rooms/:code', (req, res) => {
+  const { code } = req.params;
+  if (rooms.has(code)) {
+    rooms.delete(code);
+    return res.json({ success: true });
+  }
+  res.status(404).json({ error: 'Room not found' });
+});
+
 app.get('/api/cards/list', (req, res) => {
   const result: Record<string, string> = {};
   getCardSearchDirs().forEach(d => scanAllCardsRecursively(d, result));
@@ -324,15 +351,61 @@ function broadcastRoom(code: string) {
 }
 
 io.on('connection', (socket) => {
-  socket.on('join_room', (d) => {
-    let r = rooms.get(d.roomCode) || createNewRoom(d.roomCode, d.playerName, d.characterId);
-    if (!rooms.has(d.roomCode)) rooms.set(d.roomCode, r);
-    else if (!r.players.find(p => p.name === d.playerName)) {
-      r.players.push({ id: `p_${socket.id.substring(0,5)}`, name: d.playerName, characterId: d.characterId, isHost: false, isReady: true, isAI: false, seatNumber: r.players.length, methods: [], objects: [], ability: ABILITIES[0], abilityUsed: false, hasAccused: false });
+  socket.on('join_room', ({ roomCode, playerName, characterId, isPrivate, password, includeBots, roomSettings, roomName, gameMode }) => {
+    const code = roomCode?.toUpperCase() || 'UNKN';
+    let room = rooms.get(code);
+    let playerId = `p_${socket.id.substring(0, 6)}`;
+    let finalName = (playerName || 'Investigador').trim();
+
+    if (!room) {
+      room = createNewRoom(code, finalName, characterId);
+      if (roomSettings) room.settings = { ...room.settings, ...roomSettings };
+      if (roomName) room.roomName = roomName;
+      if (gameMode) room.gameMode = gameMode;
+      if (isPrivate !== undefined) room.isPrivate = !!isPrivate;
+      if (password) room.password = password;
+      if (includeBots) room = populateLobbyInvestigators(room, room.settings.maxPlayers || 10);
+
+      playerId = room.players[0].id;
+      finalName = room.players[0].name;
+      rooms.set(code, room);
+    } else {
+      // Logic for joining existing room
+      if (room.phase === 'LOBBY') {
+        // Handle password
+        if (room.isPrivate && room.password && room.password !== password) {
+          return socket.emit('error_message', 'Senha incorreta para esta câmara privada.');
+        }
+
+        // Replace first AI bot if room is "full" of defaults
+        const aiBotIdx = room.players.findIndex(p => p.isAI);
+        const nonAiCount = room.players.filter(p => !p.isAI).length;
+
+        if (aiBotIdx !== -1 && nonAiCount >= (room.settings.maxPlayers || 10)) {
+          return socket.emit('error_message', 'Esta câmara já está lotada.');
+        }
+
+        const char = CHARACTERS.find(c => c.id === characterId && !room!.players.some(p => p.characterId === c.id)) ||
+                     CHARACTERS.find(c => !room!.players.some(p => p.characterId === c.id)) ||
+                     CHARACTERS[0];
+
+        const newPlayer: Player = {
+          id: playerId, name: finalName, characterId: char.id, isHost: false,
+          isReady: true, isAI: false, seatNumber: room.players.length,
+          methods: [], objects: [], ability: ABILITIES[0], abilityUsed: false, hasAccused: false
+        };
+        room.players.push(newPlayer);
+      } else {
+        // Reconnect logic
+        const existing = room.players.find(p => p.name === playerName && !p.isAI);
+        if (existing) { playerId = existing.id; finalName = existing.name; }
+      }
     }
-    socket.join(d.roomCode);
-    socketToPlayer.set(socket.id, { roomCode: d.roomCode, playerId: r.players[r.players.length-1].id });
-    broadcastRoom(d.roomCode);
+
+    socket.join(code);
+    socketToPlayer.set(socket.id, { roomCode: code, playerId });
+    socket.emit('joined_success', { playerId, roomCode: code, assignedName: finalName });
+    broadcastRoom(code);
   });
 
   socket.on('update_character', (d) => {
@@ -404,7 +477,6 @@ io.on('connection', (socket) => {
   socket.on('add_bot', () => {
     const m = socketToPlayer.get(socket.id);
     const r = rooms.get(m?.roomCode || '');
-    // Limit de bots para não lotar a sala indesejadamente (ex: max 12 total)
     if (r?.hostId === m?.playerId && r.players.length < (r.settings?.maxPlayers || 12)) {
       rooms.set(r.code, populateLobbyInvestigators(r, r.players.length + 1));
       broadcastRoom(r.code);
@@ -423,6 +495,46 @@ io.on('connection', (socket) => {
         r.players = r.players.filter(p => p.id !== botToRemove.id);
         broadcastRoom(r.code);
       }
+    }
+  });
+
+  socket.on('clear_bots', () => {
+    const m = socketToPlayer.get(socket.id);
+    const r = rooms.get(m?.roomCode || '');
+    if (r?.hostId === m?.playerId && r.phase === 'LOBBY') {
+      r.players = r.players.filter(p => !p.isAI);
+      broadcastRoom(r.code);
+    }
+  });
+
+  socket.on('update_settings', (d) => {
+    const m = socketToPlayer.get(socket.id);
+    const r = rooms.get(m?.roomCode || '');
+    if (r?.hostId === m?.playerId) {
+      r.settings = { ...r.settings, ...d.settings };
+      if (d.settings?.designatedOraclePlayerId !== undefined) {
+        r.designatedOraclePlayerId = d.settings.designatedOraclePlayerId;
+      }
+      broadcastRoom(r.code);
+    }
+  });
+
+  socket.on('designate_oracle', (d) => {
+    const m = socketToPlayer.get(socket.id);
+    const r = rooms.get(m?.roomCode || '');
+    if (r?.hostId === m?.playerId && r.phase === 'LOBBY') {
+      r.designatedOraclePlayerId = d.playerId || undefined;
+      r.settings.oracleSelectionMode = d.playerId ? 'custom' : 'random';
+      broadcastRoom(r.code);
+    }
+  });
+
+  socket.on('delete_room', () => {
+    const m = socketToPlayer.get(socket.id);
+    const r = rooms.get(m?.roomCode || '');
+    if (r?.hostId === m?.playerId) {
+      io.to(r.code).emit('error_message', 'A sala foi encerrada pelo anfitrião.');
+      rooms.delete(r.code);
     }
   });
 

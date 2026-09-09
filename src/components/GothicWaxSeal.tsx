@@ -230,48 +230,40 @@ export const GothicWaxSeal: React.FC<GothicWaxSealProps> = ({
         />
 
         {/* 4. EMBOSSED ICON / SYMBOL ACCORDING TO COLOR */}
-        {/* ================= RED WAX: SKULL ================= */}
+        {/* ================= RED WAX: HIGH-DETAIL SKULL ================= */}
         {color === 'vermelho' && (
           <g filter="url(#wax_emboss)">
-            {/* Skull Dome */}
+            {/* Upper Cranium */}
             <path
-              d="M33 46 C33 34, 40 26, 50 26 C60 26, 67 34, 67 46 C67 52, 64 56, 61 58 L61 65 C61 68, 59 70, 56 70 L44 70 C41 70, 39 68, 39 65 L39 58 C36 56, 33 52, 33 46 Z"
-              fill="#991b1b"
-              stroke="#f87171"
-              strokeWidth="1.8"
+              d="M32 46 C32 30, 40 22, 50 22 C60 22, 68 30, 68 46 C68 54, 64 58, 62 60 L62 68 C62 72, 60 74, 56 74 L44 74 C40 74, 38 72, 38 68 L38 60 C36 58, 32 54, 32 46 Z"
+              fill="#7b0a0a"
+              stroke="#ef4444"
+              strokeWidth="2"
             />
-            {/* Deep Eye Sockets */}
-            <ellipse cx="43" cy="46" rx="4.5" ry="5.5" fill="#2d0505" stroke="#450a0a" strokeWidth="1" />
-            <ellipse cx="57" cy="46" rx="4.5" ry="5.5" fill="#2d0505" stroke="#450a0a" strokeWidth="1" />
-            {/* Nasal Cavity */}
-            <polygon points="50,53 48,59 52,59" fill="#2d0505" />
-            {/* Teeth Grooves */}
-            <line x1="43" y1="64" x2="43" y2="70" stroke="#2d0505" strokeWidth="1.5" />
-            <line x1="48" y1="63" x2="48" y2="70" stroke="#2d0505" strokeWidth="1.5" />
-            <line x1="52" y1="63" x2="52" y2="70" stroke="#2d0505" strokeWidth="1.5" />
-            <line x1="57" y1="64" x2="57" y2="70" stroke="#2d0505" strokeWidth="1.5" />
-            {/* Cheekbone indentations */}
-            <path d="M37 54 C39 54, 40 56, 39 58" fill="none" stroke="#2d0505" strokeWidth="1.5" />
-            <path d="M63 54 C61 54, 60 56, 61 58" fill="none" stroke="#2d0505" strokeWidth="1.5" />
+            {/* Eye Sockets - Hollowed Out */}
+            <path d="M38 46 C38 40, 46 40, 46 46 C46 52, 38 52, 38 46 Z" fill="#2d0505" />
+            <path d="M54 46 C54 40, 62 40, 62 46 C62 52, 54 52, 54 46 Z" fill="#2d0505" />
+            {/* Nasal Cavity - Triangular */}
+            <path d="M47 56 L50 50 L53 56 Z" fill="#2d0505" />
+            {/* Jaw / Teeth detail */}
+            <rect x="42" y="66" width="16" height="6" rx="1" fill="#5b0e0e" opacity="0.6" />
+            <line x1="46" y1="66" x2="46" y2="74" stroke="#2d0505" strokeWidth="1.2" />
+            <line x1="50" y1="66" x2="50" y2="74" stroke="#2d0505" strokeWidth="1.2" />
+            <line x1="54" y1="66" x2="54" y2="74" stroke="#2d0505" strokeWidth="1.2" />
           </g>
         )}
 
-        {/* ================= BLUE WAX: PENTAGRAM ================= */}
+        {/* ================= BLUE WAX: 8-POINTED COMPASS STAR ================= */}
         {color === 'azul' && (
           <g filter="url(#wax_emboss)">
-            {/* Inscribed Arcane Circle */}
-            <circle cx="50" cy="50" r="26" fill="none" stroke="#60a5fa" strokeWidth="2" />
-            <circle cx="50" cy="50" r="23" fill="none" stroke="#1e3a8a" strokeWidth="1" opacity="0.8" />
-            {/* 5-pointed Interlaced Star */}
-            <polygon
-              points="50,25 57,44 76,44 61,56 67,75 50,63 33,75 39,56 24,44 43,44"
-              fill="#1d4ed8"
-              stroke="#93c5fd"
-              strokeWidth="1.8"
-              strokeLinejoin="round"
-            />
-            {/* Center Core Dot */}
-            <circle cx="50" cy="50" r="3" fill="#bfdbfe" />
+            <circle cx="50" cy="50" r="28" fill="none" stroke="#60a5fa" strokeWidth="1.5" opacity="0.4" />
+            {/* Main Compass Points */}
+            <path d="M50 20 L54 46 L80 50 L54 54 L50 80 L46 54 L20 50 L46 46 Z" fill="#1e40af" stroke="#93c5fd" strokeWidth="2" />
+            {/* Sub-Points */}
+            <path d="M50 32 L52 48 L68 50 L52 52 L50 68 L48 52 L32 50 L48 48 Z" fill="#1d4ed8" stroke="#60a5fa" strokeWidth="1.2" transform="rotate(45 50 50)" />
+            {/* Center Hub */}
+            <circle cx="50" cy="50" r="5" fill="#1e3a8a" stroke="#93c5fd" strokeWidth="1.5" />
+            <circle cx="50" cy="50" r="2" fill="#bfdbfe" />
           </g>
         )}
 

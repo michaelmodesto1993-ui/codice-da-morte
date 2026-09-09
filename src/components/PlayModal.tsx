@@ -324,17 +324,36 @@ export const PlayModal: React.FC<PlayModalProps> = ({
                         </span>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        soundEngine.playClick();
-                        onClose();
-                        onJoinRoom(room.code);
-                      }}
-                      className="px-3 py-1.5 rounded-xl bg-gradient-to-b from-[#6e1010] to-[#360808] border border-[#b82323] hover:border-[#e5b358] text-[#f7e4ba] font-serif font-bold text-xs uppercase tracking-wider transition-all shadow shrink-0"
-                    >
-                      ENTRAR
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          soundEngine.playClick();
+                          onClose();
+                          onJoinRoom(room.code);
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-gradient-to-b from-[#6e1010] to-[#360808] border border-[#b82323] hover:border-[#e5b358] text-[#f7e4ba] font-serif font-bold text-xs uppercase tracking-wider transition-all shadow shrink-0"
+                      >
+                        ENTRAR
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (window.confirm(`Deseja realmente fechar a sala ${room.code}?`)) {
+                            soundEngine.playClick();
+                            try {
+                              const res = await fetch(`/api/rooms/${room.code}`, { method: 'DELETE' });
+                              if (res.ok) fetchPublicRooms();
+                            } catch (err) { console.error(err); }
+                          }
+                        }}
+                        className="p-1.5 rounded-xl bg-zinc-900 border border-zinc-700 hover:border-red-500 text-zinc-500 hover:text-red-400 transition-all shrink-0"
+                        title="Fechar Sala"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
