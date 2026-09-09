@@ -236,10 +236,12 @@ export function startGameDistribution(room: RoomState): RoomState {
   let saboteurIdx: number | null = null;
 
   let nextIdx = 1;
-  if (updated.settings.hasAccomplice && count >= 6 && nextIdx < nonOracleIndices.length) {
+  // If Accomplice is enabled and we have at least 4 players (1 Oracle, 1 Killer, 1 Accomplice, 1 Investigator)
+  if (updated.settings.hasAccomplice && count >= 4 && nextIdx < nonOracleIndices.length) {
     accompliceIdx = nonOracleIndices[nextIdx++];
   }
-  if (updated.settings.hasSaboteur && count >= 5 && nextIdx < nonOracleIndices.length) {
+  // If Saboteur is enabled and we have enough players left
+  if (updated.settings.hasSaboteur && count >= 4 && nextIdx < nonOracleIndices.length) {
     saboteurIdx = nonOracleIndices[nextIdx++];
   }
 
@@ -1180,7 +1182,9 @@ export function sanitizeRoomForPlayer(room: RoomState, playerId: string): RoomSt
       // Hide roles of other players unless game is over, or killer sees accomplice / accomplice sees killer
       let visibleRole: RoleType | undefined = p.role;
       if (!isGameOver && p.id !== playerId) {
-        if (isKiller && (p.role === 'cumplice' || p.role === 'oraculo')) {
+        if (p.role === 'oraculo') {
+          visibleRole = 'oraculo';
+        } else if (isKiller && (p.role === 'cumplice' || p.role === 'oraculo')) {
           visibleRole = p.role;
         } else if (isAccomplice && (p.role === 'assassino' || p.role === 'oraculo')) {
           visibleRole = p.role;
