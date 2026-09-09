@@ -77,6 +77,9 @@ import {
   LocalRoleRevealModal,
 } from './components/PassAndPlayModal';
 
+import { TUTORIAL_STEPS, createTutorialInitialState } from './data/tutorialData';
+import { TutorialOverlay } from './components/TutorialOverlay';
+
 import {
   Skull,
   BookOpen,
@@ -162,6 +165,13 @@ function GameApp() {
   // Room Creation Transition & Error States
   const [isCreatingRoom, setIsCreatingRoom] = useState<boolean>(false);
   const [roomCreationError, setRoomCreationError] = useState<string | null>(null);
+
+  // Tutorial State
+  const [isTutorialActive, setIsTutorialActive] = useState<boolean>(false);
+  const [tutorialStepIndex, setTutorialStepIndex] = useState<number>(0);
+
+  // Helper: check if we are in tutorial and current step
+  const currentTutorialStep = isTutorialActive ? TUTORIAL_STEPS[tutorialStepIndex] : null;
 
   // Sound effects toggle
   const [isSoundMuted, setIsSoundMuted] = useState<boolean>(false);
@@ -530,6 +540,20 @@ function GameApp() {
       s.disconnect();
     };
   }, []);
+
+  const handleStartTutorial = () => {
+    isLocalModeRef.current = true;
+    setIsTutorialActive(true);
+    setTutorialStepIndex(0);
+    const initial = createTutorialInitialState(playerName);
+    setMyPlayerId(initial.players[0].id);
+    setRoom(initial);
+    soundEngine.playDramaticSting();
+  };
+
+  useEffect(() => {
+    (window as any).startTutorial = handleStartTutorial;
+  }, [playerName]);
 
   // Timer countdown loop - optimized to avoid excessive interval recreation
   useEffect(() => {
@@ -2191,10 +2215,28 @@ function GameApp() {
   );
 }
 
-export default function App() {
+  const handleNextTutorialStep = () => {
+    if (tutorialStepIndex < TUTORIAL_STEPS.length - 1) {
+      setTutorialStepIndex((prev) => prev + 1);
+    } else {
+      setIsTutorialActive(false);
+      soundEngine.playGavelStrike();
+    }
+  };
+
   return (
     <GameZoomProvider>
       <GameApp />
+
+      {/* Tutorial Guide Overlay */}
+      {isTutorialActive && currentTutorialStep && (
+        <TutorialOverlay
+          step={currentTutorialStep}
+          onNext={handleNextTutorialStep}
+          onClose={() => setIsTutorialActive(false)}
+          isLast={tutorialStepIndex === TUTORIAL_STEPS.length - 1}
+        />
+      )}
     </GameZoomProvider>
   );
 }
